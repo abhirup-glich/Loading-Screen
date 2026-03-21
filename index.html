@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABSA — Coming Soon</title>
+  <style>
+    :root{
+      --purple:#a855f7;
+      --orange:#ff7a18;
+      --glass: rgba(255,255,255,0.06);
+      --stroke: rgba(255,255,255,0.12);
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: radial-gradient(circle at center, #0a0a0a, #000);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body::before, body::after{
+      content:""; position:absolute; width:600px; height:600px; filter: blur(120px);
+      z-index:0;
+    }
+    body::before{ background: radial-gradient(circle, rgba(168,85,247,.25), transparent); top:-150px; left:-150px; }
+    body::after{ background: radial-gradient(circle, rgba(255,122,24,.25), transparent); bottom:-150px; right:-150px; }
+
+    .panel{
+      position: relative;
+      z-index: 1;
+      width: 900px;
+      max-width: 95vw;
+      padding: 20px;
+      border-radius: 18px;
+      background: var(--glass);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 10px 40px rgba(0,0,0,.6);
+    }
+
+    .header{ display:flex; justify-content:space-between; margin-bottom:10px; }
+    .brand{ font-weight:800; letter-spacing:3px; font-size:20px; background: linear-gradient(90deg, var(--purple), var(--orange)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .status{ font-size:11px; padding:5px 8px; border-radius:999px; border:1px solid var(--stroke); }
+
+    .title{ font-size:28px; margin:6px 0; background: linear-gradient(90deg, var(--purple), var(--orange)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .desc{ font-size:14px; opacity:.8; margin-bottom:12px; }
+
+    .grid{ display:grid; grid-template-columns: 1fr 360px; gap:15px; }
+    .info{ display:grid; grid-template-columns: repeat(2,1fr); gap:10px; }
+
+    .card{ border:1px solid var(--stroke); border-radius:12px; padding:10px; background: rgba(0,0,0,.35); font-size:12px; }
+
+    canvas{ width:100%; border-radius:12px; background:#0f0f0f; box-shadow: 0 0 10px var(--purple), 0 0 20px var(--orange); }
+
+    .footer{ display:flex; justify-content:space-between; margin-top:10px; font-size:12px; opacity:.8; }
+    .score{ color: var(--orange); }
+
+    @media(max-width:768px){ .grid{ grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="panel">
+    <div class="header">
+      <div class="brand">Something is Cooking...</div>
+      <div class="status">Coming Soon</div>
+    </div>
+
+    <div class="title">We will be ready soon</div>
+    <div class="desc">Till that why don't you play a little game</div>
+    <div class="grid">
+      <div class="info">
+        <div class="card">Design • Code • Security</div>
+        <div class="card">React • AI • WebGL</div>
+        <div class="card">Prototype Phase</div>
+        <div class="card">Launching Soon</div>
+      </div>
+      <div>
+        <canvas id="gameCanvas" width="300" height="400"></canvas>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>Tap / Space</div>
+      <div class="score">Score: <span id="score">0</span></div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let player = { x: 60, y: 200, size: 14, velocity: 0 };
+    let gravity = 0.35; // easier
+    let jump = -6.5;    // softer jump
+
+    let obstacles = [];
+    let frame = 0;
+    let score = 0;
+    let running = false;
+    let gameOver = false;
+
+    function reset(){
+      player.y = 200;
+      player.velocity = 0;
+      obstacles = [];
+      score = 0;
+      frame = 0;
+      gameOver = false;
+      running = false;
+      document.getElementById("score").innerText = score;
+    }
+
+    function drawOverlay(text){
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+
+      ctx.font = "bold 20px Arial";
+      ctx.fillText(text, canvas.width/2, canvas.height/2 - 10);
+
+      ctx.font = "12px Arial";
+      ctx.fillText("Tap / Space to start", canvas.width/2, canvas.height/2 + 20);
+    }
+
+    function gameLoop(){
+      requestAnimationFrame(gameLoop);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      if(!running){
+        drawOverlay(gameOver ? "Game Over" : "Ready");
+        return;
+      }
+
+      player.velocity += gravity;
+      player.y += player.velocity;
+
+      ctx.fillStyle = "#a855f7";
+      ctx.shadowColor = "#a855f7";
+      ctx.shadowBlur = 10;
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+      ctx.shadowBlur = 0;
+
+      if(frame % 140 === 0){ // slower spawn (easier)
+        let gap = 140; // bigger gap
+        let top = Math.random() * 150;
+        obstacles.push({ x: canvas.width, top, bottom: top + gap, passed:false });
+      }
+
+      obstacles.forEach((obs) => {
+        obs.x -= 1.5; // slower speed
+
+        ctx.fillStyle = "#ff7a18";
+        ctx.fillRect(obs.x, 0, 20, obs.top);
+        ctx.fillRect(obs.x, obs.bottom, 20, canvas.height);
+
+        if(
+          player.x < obs.x + 20 &&
+          player.x + player.size > obs.x &&
+          (player.y < obs.top || player.y + player.size > obs.bottom)
+        ){
+          gameOver = true;
+          running = false;
+        }
+
+        if(!obs.passed && obs.x < player.x){
+          score++;
+          obs.passed = true;
+          document.getElementById("score").innerText = score;
+        }
+      });
+
+      if(player.y < 0 || player.y > canvas.height){
+        gameOver = true;
+        running = false;
+      }
+
+      frame++;
+    }
+
+    function action(){
+      if(!running){
+        reset();
+        running = true;
+        return;
+      }
+      player.velocity = jump;
+    }
+
+    document.addEventListener("keydown", e => { if(e.code === "Space") action(); });
+    document.addEventListener("touchstart", action);
+    document.addEventListener("click", action);
+
+    reset();
+    gameLoop();
+  </script>
+
+</body>
+</html>
